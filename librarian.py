@@ -40,7 +40,7 @@ def main(page: ft.Page):
     page.open(dialog_wait)
     driver = login_booklog()
 
-    table = ft.DataTable(
+    shelf_table = ft.DataTable(
                 columns = [
                     ft.DataColumn(ft.Text("")),
                     ft.DataColumn(ft.Text("ASIN")),
@@ -50,7 +50,7 @@ def main(page: ft.Page):
                 ],
             )
 
-    history = ft.DataTable(
+    category_table = ft.DataTable(
                 columns = [
                     ft.DataColumn(ft.Text("")),
                     ft.DataColumn(ft.Text("ASIN")),
@@ -60,7 +60,7 @@ def main(page: ft.Page):
                 ],
             )
 
-    shelf = ft.DataTable(
+    inventory_table = ft.DataTable(
                 columns = [
                     ft.DataColumn(ft.Text("")),
                     ft.DataColumn(ft.Text("ASIN")),
@@ -71,23 +71,23 @@ def main(page: ft.Page):
             )
 
     def table_clear(e):
-        table.rows.clear()
-        isbn.focus()
+        shelf_table.rows.clear()
+        shelf_text.focus()
         page.update()
 
     def history_clear(e):
-        history.rows.clear()
-        text.focus()
+        category_table.rows.clear()
+        category_text.focus()
         page.update()
 
     def table_copy(e):
-        text = "\t".join(map(lambda x: x.label.value, table.columns[1:]))
-        for r in table.rows:
+        text = "\t".join(map(lambda x: x.label.value, shelf_table.columns[1:]))
+        for r in shelf_table.rows:
             text += "\n" + "\t".join(map(lambda x: x.content.value, r.cells[1:]))
         subprocess.run("clip", input=text, text=True)
-        isbn.focus()
+        shelf_text.focus()
 
-    def isbn_submit(e):
+    def shelf_submit(e):
         def process(asin):
             if not re.match(r"^[0-9X]+$", asin):
                 return None
@@ -102,10 +102,10 @@ def main(page: ft.Page):
         for result in process_text(process, e.control.value):
             if not is_successful(result): continue
             book = result.unwrap()
-            table.rows.insert(0,
+            shelf_table.rows.insert(0,
                 ft.DataRow(
                     cells = [
-                        ft.DataCell(ft.Text(len(table.rows) + 1, selectable=True)),
+                        ft.DataCell(ft.Text(len(shelf_table.rows) + 1, selectable=True)),
                         ft.DataCell(ft.Text(book["asin"], selectable=True)),
                         ft.DataCell(ft.Text(book["title"], selectable=True)),
                         ft.DataCell(ft.Text(book["author"], selectable=True)),
@@ -113,6 +113,12 @@ def main(page: ft.Page):
                     ]
                 )
             )
+        e.control.value = ""
+        e.control.focus()
+        page.update()
+        page.close(dialog_wait)
+
+    def inventory_submit(e):
         e.control.value = ""
         e.control.focus()
         page.update()
@@ -136,15 +142,15 @@ def main(page: ft.Page):
                 return book
             except:
                 return None
-        for result in process_text(process, text.value):
+        for result in process_text(process, category_text.value):
             if is_successful(result):
                 book = result.unwrap()
                 next((c for c in categories if c['text'] == category_val))["count"] += 1
                 next((c for c in categories if c['text'] == book["category"]))["count"] -= 1
-                history.rows.insert(0,
+                category_table.rows.insert(0,
                     ft.DataRow(
                         cells = [
-                            ft.DataCell(ft.Text(len(history.rows) + 1, selectable=True)),
+                            ft.DataCell(ft.Text(len(category_table.rows) + 1, selectable=True)),
                             ft.DataCell(ft.Text(book["asin"], selectable=True)),
                             ft.DataCell(ft.Text(book["title"], selectable=True)),
                             ft.DataCell(ft.Text(book["category"], selectable=True)),
@@ -157,8 +163,8 @@ def main(page: ft.Page):
         update_dropdown(categories, drop_simple, drop_detail)
         if len(pending) == 1 and not re.match(r"^[0-9X]+$", pending[0].split("\t")[0]):
             pending.clear()
-        text.value = "\n".join(pending)
-        text.focus()
+        category_text.value = "\n".join(pending)
+        category_text.focus()
         page.update()
         page.close(dialog_wait)
         if len(pending) > 0:
@@ -179,7 +185,7 @@ def main(page: ft.Page):
             if len(items) == len(item_new):
                 break
             items = item_new
-        shelf.rows.clear()
+        inventory_table.rows.clear()
 
         options = []
         for key, value in {"unknown":"未確認", "checked":"確認済み", "add":"追加"}.items():
@@ -188,7 +194,7 @@ def main(page: ft.Page):
                     key=value
                 )
             )
-                    
+
         for i in items:
             title = i.find_element(By.XPATH, ".//*[@class='item-area-info-title']/a").text
             author = i.find_element(By.XPATH, ".//*[@class='author-link']").text
@@ -198,10 +204,10 @@ def main(page: ft.Page):
                     options=options,
                     value="未確認",
                 )
-            shelf.rows.append(
+            inventory_table.rows.append(
                 ft.DataRow(
                     cells = [
-                        ft.DataCell(ft.Text(len(shelf.rows) + 1, selectable=True)),
+                        ft.DataCell(ft.Text(len(inventory_table.rows) + 1, selectable=True)),
                         ft.DataCell(ft.Text(asin, selectable=True)),
                         ft.DataCell(ft.Text(title, selectable=True)),
                         ft.DataCell(ft.Text(author, selectable=True)),
@@ -212,8 +218,9 @@ def main(page: ft.Page):
         page.update()
         page.close(dialog_wait)
 
-    isbn = ft.TextField(label="ISBN or ASIN", on_submit=isbn_submit, min_lines=1, max_lines=5)
-    text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
+    shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=shelf_submit, min_lines=1, max_lines=5)
+    category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
+    inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
 
     drop_simple = ft.Dropdown(label="カテゴリ", value="0")
     drop_detail = ft.Dropdown(label="カテゴリ", value="0")
@@ -229,7 +236,7 @@ def main(page: ft.Page):
                 icon=ft.Icons.MENU_BOOK,
                 content=ft.Column(controls=[
                         ft.Divider(color=ft.Colors.TRANSPARENT),
-                        isbn,
+                        shelf_text,
                         ft.Divider(),
                         ft.ResponsiveRow([
                             ft.Column(col=9, controls=[ft.Text("検索履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
@@ -237,7 +244,7 @@ def main(page: ft.Page):
                             ft.Column(col=1, controls=[ft.FilledButton("コピー", icon=ft.Icons.COPY, on_click=table_copy)]),
                             ft.Column(col=1, controls=[ft.FilledButton("クリア", icon=ft.Icons.CLEAR, on_click=table_clear)])
                         ]),
-                        ft.Column(controls=[table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
+                        ft.Column(controls=[shelf_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                     ]),
             ),
             ft.Tab(
@@ -245,7 +252,7 @@ def main(page: ft.Page):
                 icon=ft.Icons.LIBRARY_BOOKS,
                 content=ft.Column(controls=[
                         ft.Divider(color=ft.Colors.TRANSPARENT),
-                        text,
+                        category_text,
                         ft.ResponsiveRow([
                             ft.Column(col=10, controls=[drop_simple]),
                             ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("まとめて変更", icon=ft.Icons.CHANGE_CIRCLE, on_click=bulk_submit)]),
@@ -255,7 +262,7 @@ def main(page: ft.Page):
                             ft.Column(col=11, controls=[ft.Text("変更履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
                             ft.Column(col=1, controls=[ft.FilledButton("クリア", icon=ft.Icons.CLEAR, on_click=history_clear)])
                         ]),
-                        ft.Column(controls=[history], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
+                        ft.Column(controls=[category_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                     ]),
             ),
             ft.Tab(
@@ -267,8 +274,9 @@ def main(page: ft.Page):
                             ft.Column(col=10, controls=[drop_detail]),
                             ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("データ取得", icon=ft.Icons.DOWNLOAD, on_click=shelf_download)]),
                         ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                        inventory_text,
                         ft.Divider(),
-                        ft.Column(controls=[shelf], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
+                        ft.Column(controls=[inventory_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                    ]),
             ),
         ],
@@ -276,8 +284,8 @@ def main(page: ft.Page):
     
     page.add(tab)
 
-    isbn.focus()
-    text.focus()
+    shelf_text.focus()
+    category_text.focus()
 
     # ページを更新
     page.update()
@@ -287,7 +295,7 @@ def main(page: ft.Page):
 def login_booklog():
     options = webdriver.ChromeOptions()
     options.set_capability('pageLoadStrategy', 'eager')
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
     # options.add_argument("--window-size=1200x1000")
 
     driver = webdriver.Chrome(options = options)
