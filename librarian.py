@@ -180,10 +180,24 @@ def main(page: ft.Page):
                 break
             items = item_new
         shelf.rows.clear()
+
+        options = []
+        for key, value in {"unknown":"未確認", "checked":"確認済み", "add":"追加"}.items():
+            options.append(
+                ft.DropdownOption(
+                    key=value
+                )
+            )
+                    
         for i in items:
             title = i.find_element(By.XPATH, ".//*[@class='item-area-info-title']/a").text
             author = i.find_element(By.XPATH, ".//*[@class='author-link']").text
             asin = i.find_element(By.XPATH, ".//*[@class='item-area-image']/a").get_attribute('href').split("/")[-1]
+            dd = ft.Dropdown(
+                    border_width=0,
+                    options=options,
+                    value="未確認",
+                )
             shelf.rows.append(
                 ft.DataRow(
                     cells = [
@@ -191,7 +205,7 @@ def main(page: ft.Page):
                         ft.DataCell(ft.Text(asin, selectable=True)),
                         ft.DataCell(ft.Text(title, selectable=True)),
                         ft.DataCell(ft.Text(author, selectable=True)),
-                        ft.DataCell(ft.Text("", selectable=True)),
+                        ft.DataCell(dd),
                     ]
                 )
             )
