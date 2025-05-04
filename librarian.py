@@ -119,6 +119,10 @@ def main(page: ft.Page):
         page.close(dialog_wait)
 
     def inventory_submit(e):
+        for row in inventory_table.rows:
+            if row.cells[1].content.value == e.control.value.strip():
+                row.cells[4].content.value = "確認済み"
+                break
         e.control.value = ""
         e.control.focus()
         page.update()
