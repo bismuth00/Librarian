@@ -12,11 +12,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from pprint import pp
 import flet as ft
+import json
 
-import Camera
+import camera
 
-username = "########"
-password = "********"
+config = json.load(open("config.json", "r", encoding="utf-8"))
 
 def main(page: ft.Page):
     categories = []
@@ -168,7 +168,7 @@ def main(page: ft.Page):
     def shelf_download(e):
         dialog_wait.title.value = "カテゴリ情報取得中…"
         page.open(dialog_wait)
-        driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(username, drop_detail.value))
+        driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(config["username"], drop_detail.value))
         actions = ActionChains(driver)
         items = driver.find_elements(By.CLASS_NAME, "shelf-item")
         while True and len(items) > 0:
@@ -219,7 +219,7 @@ def main(page: ft.Page):
                         ft.Divider(),
                         ft.ResponsiveRow([
                             ft.Column(col=9, controls=[ft.Text("検索履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
-                            ft.Column(col=1, controls=[ft.FilledButton("カメラ", icon=ft.Icons.COPY, on_click=Camera.test_pyocr)]),
+                            ft.Column(col=1, controls=[ft.FilledButton("カメラ", icon=ft.Icons.COPY, on_click=camera.test_pyocr)]),
                             ft.Column(col=1, controls=[ft.FilledButton("コピー", icon=ft.Icons.COPY, on_click=table_copy)]),
                             ft.Column(col=1, controls=[ft.FilledButton("クリア", icon=ft.Icons.CLEAR, on_click=table_clear)])
                         ]),
@@ -284,11 +284,11 @@ def login_booklog():
 
     e = driver.find_element(By.ID, "account")
     e.clear()
-    e.send_keys(username)
+    e.send_keys(config["username"])
     time.sleep(0.1)
     e = driver.find_element(By.ID, "password")
     e.clear()
-    e.send_keys(password)
+    e.send_keys(config["password"])
     time.sleep(1)
 
     # フォームを送信
@@ -303,7 +303,7 @@ def login_booklog():
     return driver
 
 def update_category(driver):
-    driver.get("https://booklog.jp/users/{}".format(username))
+    driver.get("https://booklog.jp/users/{}".format(config["username"]))
     driver.find_element(By.CLASS_NAME, "shelf-header-menu-category-modal").click()
     links = driver.find_elements(By.XPATH, "//*[@id='categories']/*/a")
     categories = []
