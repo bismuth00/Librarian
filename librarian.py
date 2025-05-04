@@ -126,7 +126,6 @@ def main(page: ft.Page):
         e.control.value = ""
         e.control.focus()
         page.update()
-        page.close(dialog_wait)
 
     def bulk_submit(e):
         dialog_wait.title.value = "書籍情報変更中…"
