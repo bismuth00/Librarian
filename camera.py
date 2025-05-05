@@ -24,7 +24,7 @@ def test_pyocr(e):
         sys.exit(1)
     tool = tools[0]
 
-    capture = cv2.VideoCapture(1)
+    capture = cv2.VideoCapture(0)
     width = capture.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
     print(f"元の解像度: {width}x{height}")
@@ -54,6 +54,8 @@ def test_pyocr(e):
     detect_isbn = ""
     detect_count = 0
     missing_count = 0
+    detect = False
+
     while True:
         ret, frame = capture.read()
         if not ret:
@@ -64,9 +66,13 @@ def test_pyocr(e):
             roi_detect[0][0]:roi_detect[1][0]
         ]
 
-        cv2.rectangle(frame, roi_default[0], roi_default[1], (255, 0, 0), 2)
         cv2.rectangle(frame, roi_detect[0], roi_detect[1], (0, 255, 0), 2)
+        cv2.rectangle(frame, roi_default[0], roi_default[1], (255, 0, 0), 2)
 
+        if detect:
+            detect = False
+            time.sleep(3)
+        
         processed = cv2.cvtColor(processed, cv2.COLOR_BGR2GRAY)
 
         txt = tool.image_to_string(
@@ -83,6 +89,7 @@ def test_pyocr(e):
             if t[0:3] != "978": continue
             position = box.position
             cv2.rectangle(processed, position[0], position[1], (255, 0, 0), 1)
+            
             print("text:", box.content)
             if len(t) != 13: continue
             if detect_isbn == t:
@@ -92,9 +99,19 @@ def test_pyocr(e):
                 detect_count = 1
             print("isbn:", t, "count:", detect_count, "position:", position)
             if detect_count > 2:
+                size, _ = cv2.getTextSize(detect_isbn, cv2.FONT_HERSHEY_SIMPLEX, 1, 4)
+                scale = width / size[0]
+                cv2.putText(frame, detect_isbn, (roi_detect[0][0], roi_detect[0][1]), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 0), 8)
+                cv2.putText(frame, detect_isbn, (roi_detect[0][0], roi_detect[0][1]), cv2.FONT_HERSHEY_SIMPLEX, scale, (255, 255, 255), 2)
                 print("発見されたISBN:", detect_isbn)
-                capture.release()
-
+                if e: e(detect_isbn)
+                roi_detect = roi_default
+                missing_count = 0
+                detect_count = 0
+                detect_isbn = ""
+                detect = True
+                break
+        
         if position:
             width = position[1][0] - position[0][0]
             height = position[1][1] - position[0][1]
@@ -110,6 +127,7 @@ def test_pyocr(e):
         cv2.imshow("Capture", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q') or not is_window_visible('Capture'):
+            capture.release()
             break
 
     cv2.destroyAllWindows()

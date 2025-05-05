@@ -87,7 +87,7 @@ def main(page: ft.Page):
         subprocess.run("clip", input=text, text=True)
         shelf_text.focus()
 
-    def shelf_submit(e):
+    def shelf_submit(control):
         def process(asin):
             if not re.match(r"^[0-9X]+$", asin):
                 return None
@@ -99,7 +99,7 @@ def main(page: ft.Page):
                 return { "asin": asin, "title": "エラー", "author": "", "category": "" }
         dialog_wait.title.value = "書籍情報取得中…"
         page.open(dialog_wait)
-        for result in process_text(process, e.control.value):
+        for result in process_text(process, control.value):
             if not is_successful(result): continue
             book = result.unwrap()
             shelf_table.rows.insert(0,
@@ -113,8 +113,8 @@ def main(page: ft.Page):
                     ]
                 )
             )
-        e.control.value = ""
-        e.control.focus()
+        control.value = ""
+        control.focus()
         page.update()
         page.close(dialog_wait)
 
@@ -221,7 +221,7 @@ def main(page: ft.Page):
         page.update()
         page.close(dialog_wait)
 
-    shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=shelf_submit, min_lines=1, max_lines=5)
+    shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=lambda c: shelf_submit(c), min_lines=1, max_lines=5)
     category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
     inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
 
@@ -230,6 +230,10 @@ def main(page: ft.Page):
     categories = update_category(driver)
     update_dropdown(categories, drop_simple, drop_detail)
 
+    def get_camera_isbn(e):
+        shelf_text.value += e
+        shelf_submit(shelf_text)
+    
     tab = ft.Tabs(
         animation_duration=200,
         expand=True,
@@ -243,7 +247,7 @@ def main(page: ft.Page):
                         ft.Divider(),
                         ft.ResponsiveRow([
                             ft.Column(col=9, controls=[ft.Text("検索履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
-                            ft.Column(col=1, controls=[ft.FilledButton("カメラ", icon=ft.Icons.COPY, on_click=camera.test_pyocr)]),
+                            ft.Column(col=1, controls=[ft.FilledButton("カメラ", icon=ft.Icons.COPY, on_click=lambda e: camera.test_pyocr(get_camera_isbn))]),
                             ft.Column(col=1, controls=[ft.FilledButton("コピー", icon=ft.Icons.COPY, on_click=table_copy)]),
                             ft.Column(col=1, controls=[ft.FilledButton("クリア", icon=ft.Icons.CLEAR, on_click=table_clear)])
                         ]),
@@ -298,12 +302,11 @@ def main(page: ft.Page):
 def login_booklog():
     options = webdriver.ChromeOptions()
     options.set_capability('pageLoadStrategy', 'eager')
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     # options.add_argument("--window-size=1200x1000")
 
     driver = webdriver.Chrome(options = options)
     driver.implicitly_wait(1)
-    return driver
 
     driver.get("https://booklog.jp/login")
 
