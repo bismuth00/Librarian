@@ -3,26 +3,22 @@
 import re
 import subprocess
 import time
-from returns.result import Failure, Success
 from returns.pipeline import is_successful
 
-from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from pprint import pp
 import flet as ft
-import json
 
 import camera
+import util
 
 STATE_UNKNOWN_KEY = "unknown"
 STATE_UNKNOWN_VALUE = "所在不明"
 STATE_CHECKED_KEY = "checked"
 STATE_CHECKED_VALUE = "確認済み"
 STATE_DICT = {STATE_UNKNOWN_KEY:STATE_UNKNOWN_VALUE, STATE_CHECKED_KEY:STATE_CHECKED_VALUE, "add":"新規追加"}
-
-config = json.load(open("config.json", "r", encoding="utf-8"))
 
 def main(page: ft.Page):
     categories = []
@@ -44,7 +40,7 @@ def main(page: ft.Page):
     page.add(dialog_error)
     dialog_wait.title.value = "初期化中…"
     page.open(dialog_wait)
-    driver = login_booklog()
+    driver = util.login_booklog()
 
     shelf_table = ft.DataTable(
                 columns = [
@@ -97,15 +93,15 @@ def main(page: ft.Page):
         def process(asin):
             if not re.match(r"^[0-9X]+$", asin):
                 return None
-            if not verify_asin(asin):
+            if not util.verify_asin(asin):
                 return { "asin": asin, "title": "不正な入力", "author": "", "category": "" }
             try:
-                return get_book_info(driver, asin)
+                return util.get_book_info(driver, asin)
             except:
                 return { "asin": asin, "title": "エラー", "author": "", "category": "" }
         dialog_wait.title.value = "書籍情報取得中…"
         page.open(dialog_wait)
-        for result in process_text(process, control.value):
+        for result in util.process_text(process, control.value):
             if not is_successful(result): continue
             book = result.unwrap()
             shelf_table.rows.insert(0,
@@ -127,7 +123,7 @@ def main(page: ft.Page):
     def inventory_submit(e):
         asin = e.control.value.strip()
         if re.match(r'^[0-9X]{12}[0-9X]$', asin):
-            asin = isbn_to_asin(asin)
+            asin = util.isbn_to_asin(asin)
         for row in inventory_table.rows:
             if row.cells[1].content.value == asin:
                 row.cells[4].content.value = STATE_CHECKED_KEY
@@ -143,13 +139,13 @@ def main(page: ft.Page):
             if row.cells[4].content.value == STATE_UNKNOWN_KEY:
                 if row.cells[3].content.value == STATE_UNKNOWN_VALUE:
                     continue
-                _ = get_book_info(driver, row.cells[1].content.value)
+                _ = util.get_book_info(driver, row.cells[1].content.value)
                 tags = driver.find_element(By.ID, 'tags')
                 tags.send_keys(" " + STATE_UNKNOWN_VALUE)
             elif row.cells[4].content.value == STATE_CHECKED_KEY:
                 if row.cells[3].content.value != STATE_UNKNOWN_VALUE:
                     continue
-                _ = get_book_info(driver, row.cells[1].content.value)
+                _ = util.get_book_info(driver, row.cells[1].content.value)
                 tags = driver.find_element(By.ID, 'tags')
                 tags.clear()
             else:
@@ -170,7 +166,7 @@ def main(page: ft.Page):
         pending = []
         def process(item):
             try:
-                book = get_book_info(driver, item)
+                book = util.get_book_info(driver, item)
                 select = Select(driver.find_element(By.NAME, 'category_id'))
                 select.select_by_value(category_key)
                 button = driver.find_element(By.CLASS_NAME, "positive")
@@ -179,7 +175,7 @@ def main(page: ft.Page):
                 return book
             except:
                 return None
-        for result in process_text(process, category_text.value):
+        for result in util.process_text(process, category_text.value):
             if is_successful(result):
                 book = result.unwrap()
                 next((c for c in categories if c['text'] == category_val))["count"] += 1
@@ -197,7 +193,7 @@ def main(page: ft.Page):
                 )
             else:
                 pending.append(result.failure())
-        update_dropdown(categories, drop_simple, drop_detail)
+        util.update_dropdown(categories, drop_simple, drop_detail)
         if len(pending) == 1 and not re.match(r"^[0-9X]+$", pending[0].split("\t")[0]):
             pending.clear()
         category_text.value = "\n".join(pending)
@@ -211,7 +207,7 @@ def main(page: ft.Page):
     def shelf_download(e):
         dialog_wait.title.value = "カテゴリ情報取得中…"
         page.open(dialog_wait)
-        driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(config["username"], drop_detail.value))
+        driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(util.config["username"], drop_detail.value))
         actions = ActionChains(driver)
         items = driver.find_elements(By.CLASS_NAME, "shelf-item")
         while True and len(items) > 0:
@@ -267,8 +263,8 @@ def main(page: ft.Page):
 
     drop_simple = ft.Dropdown(label="カテゴリ", value="0")
     drop_detail = ft.Dropdown(label="カテゴリ", value="0")
-    categories = update_category(driver)
-    update_dropdown(categories, drop_simple, drop_detail)
+    categories = util.update_category(driver)
+    util.update_dropdown(categories, drop_simple, drop_detail)
 
     def get_camera_isbn(e):
         shelf_text.value += e
@@ -341,99 +337,6 @@ def main(page: ft.Page):
     page.window.always_on_top = False
 
     page.close(dialog_wait)
-
-def login_booklog():
-    options = webdriver.ChromeOptions()
-    options.set_capability('pageLoadStrategy', 'eager')
-    # options.add_argument("--headless")
-    # options.add_argument("--window-size=1200x1000")
-
-    driver = webdriver.Chrome(options = options)
-    driver.implicitly_wait(1)
-
-    driver.get("https://booklog.jp/login")
-
-    e = driver.find_element(By.ID, "account")
-    e.clear()
-    e.send_keys(config["username"])
-    time.sleep(0.1)
-    e = driver.find_element(By.ID, "password")
-    e.clear()
-    e.send_keys(config["password"])
-    time.sleep(1)
-
-    # フォームを送信
-    button = driver.find_element(By.ID, "login_submit_button")
-    driver.execute_script("arguments[0].click();", button)
-    time.sleep(0.1)
-    button.click() # <- これだけだと不正検知に引っ掛かるので上の行でイベントを発火させる
-
-    while driver.current_url == "https://booklog.jp/login":
-        time.sleep(1)
-
-    return driver
-
-def update_category(driver):
-    driver.get("https://booklog.jp/users/{}".format(config["username"]))
-    driver.find_element(By.CLASS_NAME, "shelf-header-menu-category-modal").click()
-    links = driver.find_elements(By.XPATH, "//*[@id='categories']/*/a")
-    categories = []
-    for link in links:
-        r = re.search(r'\?category_id=([0-9a-z]+)', link.get_attribute('href'))
-        key = r.group(1)
-        if key == 'none': key = "0"
-        r = re.search(r' \(([0-9]+)\)', link.text)
-        categories.append({"key": key, "text": link.text.replace(r.group(), ''), "count": int(r.group(1))})
-    driver.find_element(By.CLASS_NAME, "modal-close").click()
-    return categories
-
-def update_dropdown(categories, drop_simple, drop_detail):
-    drop_simple.options.clear()
-    drop_detail.options.clear()
-    for c in categories:
-        drop_simple.options.append(ft.dropdown.Option(key=c["key"], text="{} ({})".format(c["text"], c["count"])))
-        drop_detail.options.append(ft.dropdown.Option(key=c["key"], text="{} ({})".format(c["text"], c["count"])))
-
-def verify_asin(asin):
-    return True if re.match(r'^[0-9]{9}[0-9X]$', asin) else False
-
-def process_text(func, text):
-    def process_line(line):
-        i = line.split("\t")[0]
-        if i.startswith("https://"):
-            i = i.split("/")[-1]
-        elif re.match(r'^[0-9X]{12}[0-9X]$', i):
-            i = isbn_to_asin(i)
-        ret = func(i)
-        return Success(ret) if ret else Failure(line)
-    return map(process_line, [line for line in text.split("\n") if line.strip()])
-
-def isbn_to_asin(isbn):
-    asin = isbn[:-1][3:]
-    value = int(asin)
-    digit = 2
-    check = 0
-    for i in range(9):
-        check += (value % 10) * digit
-        value = int(value / 10)
-        digit += 1
-    check = 11 - (check % 11)
-    if check == 10: asin = asin + "X"
-    elif check == 11: asin = asin + "0"
-    else: asin = asin + str(check)
-    return asin
-
-def get_book_info(driver, asin):
-    driver.get("https://booklog.jp/edit/1/{}".format(asin))
-    title = driver.find_element(By.CLASS_NAME, "titleLink").text
-    author = driver.find_element(By.CLASS_NAME, "item-info-author").text
-    try:
-        category = Select(driver.find_element(By.NAME, "category_id")).all_selected_options[0].text
-        tags = driver.find_element(By.ID, "tags").text
-    except:
-        category = "未登録"
-        tags = ""
-    return { "asin": asin, "title": title, "author": author, "category": category, "tags": tags }
 
 ft.app(target=main)
 
