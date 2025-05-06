@@ -174,7 +174,7 @@ def main(page: ft.Page):
                 select = Select(driver.find_element(By.NAME, 'category_id'))
                 select.select_by_value(category_key)
                 button = driver.find_element(By.CLASS_NAME, "positive")
-                time.sleep(0.1)
+                time.sleep(0.2)
                 button.click()
                 return book
             except:
