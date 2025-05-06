@@ -16,6 +16,12 @@ import json
 
 import camera
 
+STATE_UNKNOWN_KEY = "unknown"
+STATE_UNKNOWN_VALUE = "所在不明"
+STATE_CHECKED_KEY = "checked"
+STATE_CHECKED_VALUE = "確認済み"
+STATE_DICT = {STATE_UNKNOWN_KEY:STATE_UNKNOWN_VALUE, STATE_CHECKED_KEY:STATE_CHECKED_VALUE, "add":"新規追加"}
+
 config = json.load(open("config.json", "r", encoding="utf-8"))
 
 def main(page: ft.Page):
@@ -65,8 +71,8 @@ def main(page: ft.Page):
                     ft.DataColumn(ft.Text("")),
                     ft.DataColumn(ft.Text("ASIN")),
                     ft.DataColumn(ft.Text("書名")),
-                    ft.DataColumn(ft.Text("作者")),
-                    ft.DataColumn(ft.Text("確認")),
+                    ft.DataColumn(ft.Text("タグ")),
+                    ft.DataColumn(ft.Text("状態")),
                 ],
             )
 
@@ -119,13 +125,41 @@ def main(page: ft.Page):
         page.close(dialog_wait)
 
     def inventory_submit(e):
+        asin = e.control.value.strip()
+        if re.match(r'^[0-9X]{12}[0-9X]$', asin):
+            asin = isbn_to_asin(asin)
         for row in inventory_table.rows:
-            if row.cells[1].content.value == e.control.value.strip():
-                row.cells[4].content.value = "確認済み"
+            if row.cells[1].content.value == asin:
+                row.cells[4].content.value = STATE_CHECKED_KEY
                 break
         e.control.value = ""
         e.control.focus()
         page.update()
+
+    def inventory_end(e):
+        dialog_wait.title.value = "書籍情報変更中…"
+        page.open(dialog_wait)
+        for row in inventory_table.rows:
+            if row.cells[4].content.value == STATE_UNKNOWN_KEY:
+                if row.cells[3].content.value == STATE_UNKNOWN_VALUE:
+                    continue
+                _ = get_book_info(driver, row.cells[1].content.value)
+                tags = driver.find_element(By.ID, 'tags')
+                tags.send_keys(" " + STATE_UNKNOWN_VALUE)
+            elif row.cells[4].content.value == STATE_CHECKED_KEY:
+                if row.cells[3].content.value != STATE_UNKNOWN_VALUE:
+                    continue
+                _ = get_book_info(driver, row.cells[1].content.value)
+                tags = driver.find_element(By.ID, 'tags')
+                tags.clear()
+            else:
+                continue
+            button = driver.find_element(By.CLASS_NAME, "positive")
+            time.sleep(0.2)
+            button.click()
+        inventory_table.rows.clear()
+        page.update()
+        page.close(dialog_wait)
 
     def bulk_submit(e):
         dialog_wait.title.value = "書籍情報変更中…"
@@ -191,21 +225,26 @@ def main(page: ft.Page):
         inventory_table.rows.clear()
 
         options = []
-        for key, value in {"unknown":"未確認", "checked":"確認済み", "add":"追加"}.items():
+        for key, value in STATE_DICT.items():
             options.append(
                 ft.DropdownOption(
-                    key=value
+                    key=key,
+                    text=value,
                 )
             )
 
         for i in items:
             title = i.find_element(By.XPATH, ".//*[@class='item-area-info-title']/a").text
-            author = i.find_element(By.XPATH, ".//*[@class='author-link']").text
             asin = i.find_element(By.XPATH, ".//*[@class='item-area-image']/a").get_attribute('href').split("/")[-1]
+            tags = i.find_elements(By.XPATH, ".//*[@class='more-info-tags']")
+            if len(tags) > 0:
+                tags = tags[0].find_element(By.XPATH, "./ul/li/a").text
+            else:
+                tags = None
             dd = ft.Dropdown(
                     border_width=0,
                     options=options,
-                    value="未確認",
+                    value="unknown",
                 )
             inventory_table.rows.append(
                 ft.DataRow(
@@ -213,15 +252,16 @@ def main(page: ft.Page):
                         ft.DataCell(ft.Text(len(inventory_table.rows) + 1, selectable=True)),
                         ft.DataCell(ft.Text(asin, selectable=True)),
                         ft.DataCell(ft.Text(title, selectable=True)),
-                        ft.DataCell(ft.Text(author, selectable=True)),
+                        ft.DataCell(ft.Text(tags, selectable=True)),
                         ft.DataCell(dd),
                     ]
                 )
             )
+        inventory_text.focus()
         page.update()
         page.close(dialog_wait)
 
-    shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=lambda c: shelf_submit(c), min_lines=1, max_lines=5)
+    shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=lambda e: shelf_submit(e.control), min_lines=1, max_lines=5)
     category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
     inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
 
@@ -278,8 +318,9 @@ def main(page: ft.Page):
                 content=ft.Column(controls=[
                         ft.Divider(color=ft.Colors.TRANSPARENT),
                         ft.ResponsiveRow([
-                            ft.Column(col=10, controls=[drop_detail]),
+                            ft.Column(col=8, controls=[drop_detail]),
                             ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("データ取得", icon=ft.Icons.DOWNLOAD, on_click=shelf_download)]),
+                            ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("棚卸終了", icon=ft.Icons.PIN_END, on_click=inventory_end)]),
                         ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                         inventory_text,
                         ft.Divider(),
@@ -293,9 +334,11 @@ def main(page: ft.Page):
 
     shelf_text.focus()
     category_text.focus()
+    inventory_text.focus()
 
-    # ページを更新
+    page.window.always_on_top = True
     page.update()
+    page.window.always_on_top = False
 
     page.close(dialog_wait)
 
@@ -386,9 +429,11 @@ def get_book_info(driver, asin):
     author = driver.find_element(By.CLASS_NAME, "item-info-author").text
     try:
         category = Select(driver.find_element(By.NAME, "category_id")).all_selected_options[0].text
+        tags = driver.find_element(By.ID, "tags").text
     except:
         category = "未登録"
-    return { "asin": asin, "title": title, "author": author, "category": category }
+        tags = ""
+    return { "asin": asin, "title": title, "author": author, "category": category, "tags": tags }
 
 ft.app(target=main)
 
