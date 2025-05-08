@@ -21,7 +21,7 @@ def login_booklog():
     # options.add_argument("--window-size=1200x1000")
 
     driver = webdriver.Chrome(options = options)
-    driver.implicitly_wait(1)
+    driver.implicitly_wait(0)
 
     driver.get("https://booklog.jp/login")
 

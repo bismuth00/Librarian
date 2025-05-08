@@ -334,7 +334,9 @@ def main(page: ft.Page):
 
     page.window.always_on_top = True
     page.update()
+    time.sleep(0.2)
     page.window.always_on_top = False
+    page.update()
 
     page.close(dialog_wait)
 
