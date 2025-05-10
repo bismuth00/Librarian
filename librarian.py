@@ -273,6 +273,7 @@ def main(page: ft.Page):
     tab = ft.Tabs(
         animation_duration=200,
         expand=True,
+        is_secondary=True,
         tabs=[
             ft.Tab(
                 text="書籍情報",
@@ -326,7 +327,26 @@ def main(page: ft.Page):
         ],
     )
     
-    page.add(tab)
+    tabs = ft.Tabs(
+        animation_duration=200,
+        expand=True,
+        tabs=[
+            ft.Tab(
+                text="私物漫画管理",
+                icon=ft.Icons.BOOK,
+                content=tab,
+            ),
+            ft.Tab(
+                text="会社資料管理",
+                icon=ft.Icons.BUSINESS
+            ),
+            ft.Tab(
+                text="私物資料管理",
+                icon=ft.Icons.BOOKMARK
+            )
+        ])
+
+    page.add(tabs)
 
     shelf_text.focus()
     category_text.focus()
