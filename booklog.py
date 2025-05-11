@@ -53,12 +53,12 @@ class BookLog(ft.Container):
 
         def table_clear(e):
             shelf_table.rows.clear()
-            shelf_text.focus()
+            self.shelf_text.focus()
             self.page.update()
 
         def history_clear(e):
             category_table.rows.clear()
-            category_text.focus()
+            self.category_text.focus()
             self.page.update()
 
         def table_copy(e):
@@ -66,7 +66,7 @@ class BookLog(ft.Container):
             for r in shelf_table.rows:
                 text += "\n" + "\t".join(map(lambda x: x.content.value, r.cells[1:]))
             subprocess.run("clip", input=text, text=True)
-            shelf_text.focus()
+            self.shelf_text.focus()
 
         def shelf_submit(control):
             def process(asin):
@@ -149,7 +149,7 @@ class BookLog(ft.Container):
                         return book
                     except:
                         return None
-                for result in util.process_text(process, category_text.value):
+                for result in util.process_text(process, self.category_text.value):
                     if is_successful(result):
                         book = result.unwrap()
                         next((c for c in categories if c['text'] == category_val))["count"] += 1
@@ -170,8 +170,8 @@ class BookLog(ft.Container):
                 util.update_dropdown(categories, drop_simple, drop_detail)
                 if len(pending) == 1 and not re.match(r"^[0-9X]+$", pending[0].split("\t")[0]):
                     pending.clear()
-                category_text.value = "\n".join(pending)
-                category_text.focus()
+                self.category_text.value = "\n".join(pending)
+                self.category_text.focus()
                 self.page.update()
             if len(pending) > 0:
                 self.dialog_error.content.value = "{}件の変更に失敗しました".format(len(pending))
@@ -225,12 +225,12 @@ class BookLog(ft.Container):
                             ]
                         )
                     )
-                inventory_text.focus()
+                self.inventory_text.focus()
                 self.page.update()
 
-        shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=lambda e: shelf_submit(e.control), min_lines=1, max_lines=5)
-        category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
-        inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
+        self.shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=lambda e: shelf_submit(e.control), min_lines=1, max_lines=5)
+        self.category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
+        self.inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
 
         drop_simple = ft.Dropdown(label="カテゴリ", value="0")
         drop_detail = ft.Dropdown(label="カテゴリ", value="0")
@@ -238,8 +238,8 @@ class BookLog(ft.Container):
         util.update_dropdown(categories, drop_simple, drop_detail)
 
         def get_camera_isbn(e):
-            shelf_text.value += e
-            shelf_submit(shelf_text)
+            self.shelf_text.value += e
+            shelf_submit(self.shelf_text)
         
         tab = ft.Tabs(
             animation_duration=200,
@@ -251,7 +251,7 @@ class BookLog(ft.Container):
                     icon=ft.Icons.MENU_BOOK,
                     content=ft.Column(controls=[
                             ft.Divider(color=ft.Colors.TRANSPARENT),
-                            shelf_text,
+                            self.shelf_text,
                             ft.Divider(),
                             ft.ResponsiveRow([
                                 ft.Column(col=9, controls=[ft.Text("検索履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
@@ -267,7 +267,7 @@ class BookLog(ft.Container):
                     icon=ft.Icons.LIBRARY_BOOKS,
                     content=ft.Column(controls=[
                             ft.Divider(color=ft.Colors.TRANSPARENT),
-                            category_text,
+                            self.category_text,
                             ft.ResponsiveRow([
                                 ft.Column(col=10, controls=[drop_simple]),
                                 ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("まとめて変更", icon=ft.Icons.CHANGE_CIRCLE, on_click=bulk_submit)]),
@@ -290,7 +290,7 @@ class BookLog(ft.Container):
                                 ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("データ取得", icon=ft.Icons.DOWNLOAD, on_click=shelf_download)]),
                                 ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("棚卸終了", icon=ft.Icons.PIN_END, on_click=inventory_end)]),
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-                            inventory_text,
+                            self.inventory_text,
                             ft.Divider(),
                             ft.Column(controls=[inventory_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                     ]),
@@ -298,9 +298,10 @@ class BookLog(ft.Container):
             ],
         )
         self.content = tab
-        # shelf_text.focus()
-        # category_text.focus()
-        # inventory_text.focus()
+    def did_mount(self):
+        self.shelf_text.focus()
+        self.category_text.focus()
+        self.inventory_text.focus()
 
     def login(self):
         options = webdriver.ChromeOptions()
