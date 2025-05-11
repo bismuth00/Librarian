@@ -1,7 +1,8 @@
+import json
 from pprint import pp
 import flet as ft
 import booklog
-import json
+import cosmos
 import util
 
 def main(page: ft.Page):
@@ -30,11 +31,8 @@ def main(page: ft.Page):
                 ),
                 ft.Tab(
                     text="会社資料管理",
-                    icon=ft.Icons.BUSINESS
-                ),
-                ft.Tab(
-                    text="私物資料管理",
-                    icon=ft.Icons.BOOKMARK
+                    icon=ft.Icons.BUSINESS,
+                    content=cosmos.Cosmos(page, dialog_wait, dialog_error),
                 )
             ])
         page.add(tabs)
