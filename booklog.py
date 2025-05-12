@@ -254,10 +254,10 @@ class BookLog(ft.Container):
                             self.shelf_text,
                             ft.Divider(),
                             ft.ResponsiveRow([
-                                ft.Column(col=9, controls=[ft.Text("検索履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
-                                ft.Column(col=1, controls=[ft.FilledButton("カメラ", icon=ft.Icons.COPY, on_click=lambda e: camera.test_pyocr(get_camera_isbn))]),
-                                ft.Column(col=1, controls=[ft.FilledButton("コピー", icon=ft.Icons.COPY, on_click=table_copy)]),
-                                ft.Column(col=1, controls=[ft.FilledButton("クリア", icon=ft.Icons.CLEAR, on_click=table_clear)])
+                                ft.Text("検索履歴", col=9, theme_style=ft.TextThemeStyle.TITLE_LARGE),
+                                ft.FilledButton("カメラ", col=1, icon=ft.Icons.COPY, on_click=lambda e: camera.test_pyocr(get_camera_isbn)),
+                                ft.FilledButton("コピー", col=1, icon=ft.Icons.COPY, on_click=table_copy),
+                                ft.FilledButton("クリア", col=1, icon=ft.Icons.CLEAR, on_click=table_clear)
                             ]),
                             ft.Column(controls=[shelf_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                         ]),
@@ -270,12 +270,12 @@ class BookLog(ft.Container):
                             self.category_text,
                             ft.ResponsiveRow([
                                 ft.Column(col=10, controls=[drop_simple]),
-                                ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("まとめて変更", icon=ft.Icons.CHANGE_CIRCLE, on_click=bulk_submit)]),
+                                ft.FilledButton("まとめて変更", col=2, icon=ft.Icons.CHANGE_CIRCLE, on_click=bulk_submit)
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                             ft.Divider(),
                             ft.ResponsiveRow([
-                                ft.Column(col=11, controls=[ft.Text("変更履歴", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
-                                ft.Column(col=1, controls=[ft.FilledButton("クリア", icon=ft.Icons.CLEAR, on_click=history_clear)])
+                                ft.Text("変更履歴", col=11, theme_style=ft.TextThemeStyle.TITLE_LARGE),
+                                ft.FilledButton("クリア", col=1, icon=ft.Icons.CLEAR, on_click=history_clear)
                             ]),
                             ft.Column(controls=[category_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                         ]),
@@ -287,8 +287,8 @@ class BookLog(ft.Container):
                             ft.Divider(color=ft.Colors.TRANSPARENT),
                             ft.ResponsiveRow([
                                 ft.Column(col=8, controls=[drop_detail]),
-                                ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("データ取得", icon=ft.Icons.DOWNLOAD, on_click=shelf_download)]),
-                                ft.Column(col=2, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[ft.FilledButton("棚卸終了", icon=ft.Icons.PIN_END, on_click=inventory_end)]),
+                                ft.FilledButton("データ取得", col=2, icon=ft.Icons.DOWNLOAD, on_click=shelf_download),
+                                ft.FilledButton("棚卸終了", col=2, icon=ft.Icons.PIN_END, on_click=inventory_end)
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                             self.inventory_text,
                             ft.Divider(),

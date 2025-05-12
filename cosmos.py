@@ -36,4 +36,18 @@ class Cosmos(ft.Container):
                 )
             )
 
-        self.content = ft.Column(controls=[shelf_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
+        self.content = ft.Column(controls=[
+            ft.ResponsiveRow([
+                ft.Column(col=6, controls=[ft.Text("管理カテゴリー", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
+                ft.CupertinoSlidingSegmentedButton(
+                    col=6,
+                    selected_index=1,
+                    controls=[
+                        ft.Text("無印"),
+                        ft.Text("ＢＫ"),
+                        ft.Text("ＤＶ"),
+                        ft.Text("ＨＶ"),
+                    ],
+                )
+            ]),
+            shelf_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
