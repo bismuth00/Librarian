@@ -134,8 +134,8 @@ class BookLog(ft.Container):
 
         def bulk_submit(e):
             with util.OpenDialog(self.page, self.dialog_wait, "書籍情報変更中…"):
-                category_key = drop_simple.value
-                category_val = next((o.text for o in drop_simple.options if o.key == category_key))
+                category_key = categories_simple.value
+                category_val = next((o.text for o in categories_simple.options if o.key == category_key))
                 category_val = re.sub(r" \([0-9]+\)", "", category_val)
                 pending = []
                 def process(item):
@@ -167,7 +167,7 @@ class BookLog(ft.Container):
                         )
                     else:
                         pending.append(result.failure())
-                util.update_dropdown(categories, drop_simple, drop_detail)
+                util.update_dropdown(categories, categories_simple, categories_detail)
                 if len(pending) == 1 and not re.match(r"^[0-9X]+$", pending[0].split("\t")[0]):
                     pending.clear()
                 self.category_text.value = "\n".join(pending)
@@ -179,7 +179,7 @@ class BookLog(ft.Container):
 
         def shelf_download(e):
             with util.OpenDialog(self.page, self.dialog_wait, "カテゴリ情報取得中…"):
-                self.driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(self.config["username"], drop_detail.value))
+                self.driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(self.config["username"], categories_detail.value))
                 actions = ActionChains(self.driver)
                 items = self.driver.find_elements(By.CLASS_NAME, "shelf-item")
                 while True and len(items) > 0:
@@ -232,10 +232,10 @@ class BookLog(ft.Container):
         self.category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
         self.inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
 
-        drop_simple = ft.Dropdown(label="カテゴリ", value="0")
-        drop_detail = ft.Dropdown(label="カテゴリ", value="0")
+        categories_simple = ft.Dropdown(label="カテゴリ", value="0")
+        categories_detail = ft.Dropdown(label="カテゴリ", value="0")
         categories = self.update_category()
-        util.update_dropdown(categories, drop_simple, drop_detail)
+        util.update_dropdown(categories, categories_simple, categories_detail)
 
         def get_camera_isbn(e):
             self.shelf_text.value += e
@@ -269,7 +269,7 @@ class BookLog(ft.Container):
                             ft.Divider(color=ft.Colors.TRANSPARENT),
                             self.category_text,
                             ft.ResponsiveRow([
-                                ft.Column(col=10, controls=[drop_simple]),
+                                ft.Column(col=10, controls=[categories_simple]),
                                 ft.FilledButton("まとめて変更", col=2, icon=ft.Icons.CHANGE_CIRCLE, on_click=bulk_submit)
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                             ft.Divider(),
@@ -286,7 +286,7 @@ class BookLog(ft.Container):
                     content=ft.Column(controls=[
                             ft.Divider(color=ft.Colors.TRANSPARENT),
                             ft.ResponsiveRow([
-                                ft.Column(col=8, controls=[drop_detail]),
+                                ft.Column(col=8, controls=[categories_detail]),
                                 ft.FilledButton("データ取得", col=2, icon=ft.Icons.DOWNLOAD, on_click=shelf_download),
                                 ft.FilledButton("棚卸終了", col=2, icon=ft.Icons.PIN_END, on_click=inventory_end)
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
