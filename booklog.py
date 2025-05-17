@@ -241,7 +241,7 @@ class BookLog(ft.Container):
             self.shelf_text.value += e
             shelf_submit(self.shelf_text)
         
-        tab = ft.Tabs(
+        self.content = ft.Tabs(
             animation_duration=200,
             expand=True,
             is_secondary=True,
@@ -297,7 +297,7 @@ class BookLog(ft.Container):
                 ),
             ],
         )
-        self.content = tab
+
     def did_mount(self):
         self.shelf_text.focus()
         self.category_text.focus()
