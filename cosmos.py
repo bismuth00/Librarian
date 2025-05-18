@@ -13,8 +13,32 @@ class Cosmos(ft.Container):
         self.dialog_wait = dialog_wait
         self.dialog_error = dialog_error
 
+    def did_mount(self):
+        def shelf_keyboard(e):
+            if e.key == "Escape":
+                self.buttons.selected_index = (self.buttons.selected_index + 1) % len(self.buttons.controls)
+                self.buttons.update()
+        self.page.on_keyboard_event = shelf_keyboard
+        self.page.update()
+
     def build(self):
-        self.inventory_text = ft.TextField(label="ISBN or ASIN", min_lines=1, max_lines=5)
+        self.buttons = ft.CupertinoSlidingSegmentedButton(
+            selected_index=0,
+            controls=[
+                ft.Text("無印"),
+                ft.Text("ＢＫ"),
+                ft.Text("ＣＤ"),
+                ft.Text("ＤＶ"),
+                ft.Text("ＨＶ"),
+                ft.Text("ISBN"),
+            ]
+        )
+
+        def shelf_change(e):
+            print("shelf_change=", e)
+
+        self.shelf_text = ft.TextField(label="管理番号 or ISBN", on_change=shelf_change)
+        self.inventory_text = ft.TextField(label="管理番号 or ISBN", min_lines=1, max_lines=5)
 
         self.shelf_table = ft.DataTable(
             sort_column_index=1,
@@ -35,18 +59,18 @@ class Cosmos(ft.Container):
                         ft.DataColumn(ft.Text("状態")),
                     ],
                 )
-        for _, book in self.books.items():
-            self.shelf_table.rows.append(
-                ft.DataRow(
-                    cells = [
-                        ft.DataCell(ft.Text(len(self.shelf_table.rows) + 1, selectable=True)),
-                        ft.DataCell(ft.Text(book["class_id"], selectable=True)),
-                        ft.DataCell(ft.Text(book["category"], selectable=True)),
-                        ft.DataCell(ft.Text(book["title"], selectable=True)),
-                        ft.DataCell(ft.Text(book.get("location"), selectable=True)),
-                    ]
-                )
-            )
+        # for _, book in self.books.items():
+        #     self.shelf_table.rows.append(
+        #         ft.DataRow(
+        #             cells = [
+        #                 ft.DataCell(ft.Text(len(self.shelf_table.rows) + 1, selectable=True)),
+        #                 ft.DataCell(ft.Text(book["class_id"], selectable=True)),
+        #                 ft.DataCell(ft.Text(book["category"], selectable=True)),
+        #                 ft.DataCell(ft.Text(book["title"], selectable=True)),
+        #                 ft.DataCell(ft.Text(book.get("location"), selectable=True)),
+        #             ]
+        #         )
+        #     )
 
         self.content = ft.Tabs(
             animation_duration=200,
@@ -59,20 +83,10 @@ class Cosmos(ft.Container):
                     content=ft.Column(controls=[
                         ft.Divider(color=ft.Colors.TRANSPARENT),
                         ft.ResponsiveRow([
-                            ft.Column(col=6, controls=[ft.Text("管理カテゴリー", theme_style=ft.TextThemeStyle.TITLE_LARGE)]),
-                            ft.CupertinoSlidingSegmentedButton(
-                                col=6,
-                                selected_index=1,
-                                controls=[
-                                    ft.Text("無印"),
-                                    ft.Text("ISBN"),
-                                    ft.Text("ＢＫ"),
-                                    ft.Text("ＣＤ"),
-                                    ft.Text("ＤＶ"),
-                                    ft.Text("ＨＶ"),
-                                ],
-                            )
-                        ]),
+                            ft.Text("管理カテゴリ", col=1, theme_style=ft.TextThemeStyle.TITLE_MEDIUM),
+                            ft.Column(col=3, controls=[self.buttons]),
+                            ft.Column(col=8, controls=[self.shelf_text]),
+                        ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                         ft.Column(controls=[self.shelf_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
                     ])
                 ),

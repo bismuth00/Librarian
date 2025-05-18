@@ -20,7 +20,7 @@ def update_dropdown(categories, drop_simple, drop_detail):
     drop_simple.options.clear()
     drop_detail.options.clear()
     for c in categories:
-        drop_simple.options.append(ft.dropdown.Option(key=c["key"], text="{} ({})".format(c["text"], c["count"])))
+        drop_simple.options.append(ft.dropdown.Option(key=c["key"], text="{}".format(c["text"])))
         drop_detail.options.append(ft.dropdown.Option(key=c["key"], text="{} ({})".format(c["text"], c["count"])))
 
 def verify_asin(asin):
