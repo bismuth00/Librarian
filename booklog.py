@@ -140,7 +140,7 @@ class BookLog(ft.Container):
                 pending = []
                 def process(item):
                     try:
-                        book = util.get_book_info(self.driver, item)
+                        book = self.get_book_info(item)
                         select = Select(self.driver.find_element(By.NAME, 'category_id'))
                         select.select_by_value(category_key)
                         button = self.driver.find_element(By.CLASS_NAME, "positive")
