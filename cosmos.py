@@ -35,7 +35,23 @@ class Cosmos(ft.Container):
         )
 
         def shelf_change(e):
-            print("shelf_change=", e)
+            text = []
+            for book in self.books.values():
+                ids = book['class_id'].split("-")
+                if len(ids) > 1 and not ids[0].isdecimal():
+                    id = ids[1]
+                else:
+                    id = ids[0]
+                if id == e.data:
+                    print(book)
+                    text.append("管理番号:{} タイトル:{}".format(book['class_id'], book['title']))
+            if len(text) > 0:
+                print(text)
+                snackbar = ft.SnackBar(ft.Text("\n".join(text)))
+                self.page.add(snackbar)
+                self.page.overlay.append(snackbar)
+                snackbar.open = True
+                self.page.update()    
 
         self.shelf_text = ft.TextField(label="管理番号 or ISBN", on_change=shelf_change)
         self.inventory_text = ft.TextField(label="管理番号 or ISBN", min_lines=1, max_lines=5)
