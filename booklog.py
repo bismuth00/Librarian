@@ -146,6 +146,7 @@ class BookLog(ft.Container):
                         button = self.driver.find_element(By.CLASS_NAME, "positive")
                         time.sleep(0.2)
                         button.click()
+                        time.sleep(0.2)
                         return book
                     except:
                         return None
