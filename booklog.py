@@ -1,4 +1,3 @@
-import subprocess
 import time
 import re
 from returns.pipeline import is_successful
@@ -7,29 +6,17 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 import flet as ft
-import camera
 import util
+from booklog_shelf import BooklogShelf
 
-class BookLog(ft.Container):
-    def __init__(self, page, dialog_wait, dialog_error, config):
+class Booklog(ft.Container):
+    def __init__(self, page, config):
         super().__init__()
         self.page = page
-        self.dialog_wait = dialog_wait
-        self.dialog_error = dialog_error
         self.config = config
 
     def build(self):
         self.driver = self.login()
-
-        shelf_table = ft.DataTable(
-                    columns = [
-                        ft.DataColumn(ft.Text("")),
-                        ft.DataColumn(ft.Text("ASIN")),
-                        ft.DataColumn(ft.Text("書名")),
-                        ft.DataColumn(ft.Text("作者")),
-                        ft.DataColumn(ft.Text("カテゴリ")),
-                    ],
-                )
 
         category_table = ft.DataTable(
                     columns = [
@@ -51,51 +38,10 @@ class BookLog(ft.Container):
                     ],
                 )
 
-        def table_clear(e):
-            shelf_table.rows.clear()
-            self.shelf_text.focus()
-            self.page.update()
-
         def history_clear(e):
             category_table.rows.clear()
             self.category_text.focus()
             self.page.update()
-
-        def table_copy(e):
-            text = "\t".join(map(lambda x: x.label.value, shelf_table.columns[1:]))
-            for r in shelf_table.rows:
-                text += "\n" + "\t".join(map(lambda x: x.content.value, r.cells[1:]))
-            subprocess.run("clip", input=text, text=True)
-            self.shelf_text.focus()
-
-        def shelf_submit(control):
-            def process(asin):
-                if not re.match(r"^[0-9X]+$", asin):
-                    return None
-                if not util.verify_asin(asin):
-                    return { "asin": asin, "title": "不正な入力", "author": "", "category": "" }
-                try:
-                    return self.get_book_info(asin)
-                except:
-                    return { "asin": asin, "title": "エラー", "author": "", "category": "" }
-            with util.OpenDialog(self.page, self.dialog_wait, "書籍情報取得中…"):
-                for result in util.process_text(process, control.value):
-                    if not is_successful(result): continue
-                    book = result.unwrap()
-                    shelf_table.rows.insert(0,
-                        ft.DataRow(
-                            cells = [
-                                ft.DataCell(ft.Text(len(shelf_table.rows) + 1, selectable=True)),
-                                ft.DataCell(ft.Text(book["asin"], selectable=True)),
-                                ft.DataCell(ft.Text(book["title"], selectable=True)),
-                                ft.DataCell(ft.Text(book["author"], selectable=True)),
-                                ft.DataCell(ft.Text(book["category"], selectable=True)),
-                            ]
-                        )
-                    )
-                control.value = ""
-                control.focus()
-                self.page.update()
 
         def inventory_submit(e):
             asin = e.control.value.strip()
@@ -110,7 +56,7 @@ class BookLog(ft.Container):
             self.page.update()
 
         def inventory_end(e):
-            with util.OpenDialog(self.page, self.dialog_wait, "書籍情報変更中…"):
+            with util.OpenWaitDialog(self.page, "書籍情報変更中…"):
                 for row in inventory_table.rows:
                     if row.cells[4].content.value == util.STATE_UNKNOWN_KEY:
                         if row.cells[3].content.value == util.STATE_UNKNOWN_VALUE:
@@ -133,10 +79,11 @@ class BookLog(ft.Container):
                 self.page.update()
 
         def bulk_submit(e):
-            with util.OpenDialog(self.page, self.dialog_wait, "書籍情報変更中…"):
-                category_key = categories_simple.value
-                category_val = next((o.text for o in categories_simple.options if o.key == category_key))
+            with util.OpenWaitDialog(self.page, "書籍情報変更中…"):
+                category_key = self.categories_detail.value
+                category_val = next((o.text for o in self.categories_detail.options if o.key == category_key))
                 category_val = re.sub(r" \([0-9]+\)", "", category_val)
+                print("category_key:", category_key, "category_val:", category_val)
                 pending = []
                 def process(item):
                     try:
@@ -153,8 +100,8 @@ class BookLog(ft.Container):
                 for result in util.process_text(process, self.category_text.value):
                     if is_successful(result):
                         book = result.unwrap()
-                        next((c for c in categories if c['text'] == category_val))["count"] += 1
-                        next((c for c in categories if c['text'] == book["category"]))["count"] -= 1
+                        next((c for c in self.categories if c['text'] == category_val))["count"] += 1
+                        next((c for c in self.categories if c['text'] == book["category"]))["count"] -= 1
                         category_table.rows.insert(0,
                             ft.DataRow(
                                 cells = [
@@ -168,19 +115,18 @@ class BookLog(ft.Container):
                         )
                     else:
                         pending.append(result.failure())
-                util.update_dropdown(categories, categories_simple, categories_detail)
-                if len(pending) == 1 and not re.match(r"^[0-9X]+$", pending[0].split("\t")[0]):
-                    pending.clear()
-                self.category_text.value = "\n".join(pending)
-                self.category_text.focus()
-                self.page.update()
+            self.update_category()
+            if len(pending) == 1 and not re.match(r"^[0-9X]+$", pending[0].split("\t")[0]):
+                pending.clear()
+            self.category_text.value = "\n".join(pending)
+            self.category_text.focus()
+            self.page.update()
             if len(pending) > 0:
-                self.dialog_error.content.value = "{}件の変更に失敗しました".format(len(pending))
-                self.page.open(self.dialog_error)
+                util.OpenErrorDialog(self.page, "{}件の変更に失敗しました".format(len(pending)))
 
         def shelf_download(e):
-            with util.OpenDialog(self.page, self.dialog_wait, "カテゴリ情報取得中…"):
-                self.driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(self.config["username"], categories_detail.value))
+            with util.OpenWaitDialog(self.page, "カテゴリ情報取得中…"):
+                self.driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(self.config["username"], self.categories_detail.value))
                 actions = ActionChains(self.driver)
                 items = self.driver.find_elements(By.CLASS_NAME, "shelf-item")
                 while True and len(items) > 0:
@@ -229,19 +175,16 @@ class BookLog(ft.Container):
                 self.inventory_text.focus()
                 self.page.update()
 
-        self.shelf_text = ft.TextField(label="ISBN or ASIN", on_submit=lambda e: shelf_submit(e.control), min_lines=1, max_lines=5)
         self.category_text = ft.TextField(label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5)
         self.inventory_text = ft.TextField(label="ISBN or ASIN", on_submit=inventory_submit, min_lines=1, max_lines=5)
 
-        categories_simple = ft.Dropdown(label="カテゴリ", value="0")
-        categories_detail = ft.Dropdown(label="カテゴリ", value="0")
-        categories = self.update_category()
-        util.update_dropdown(categories, categories_simple, categories_detail)
+        self.categories_simple = ft.Dropdown(label="カテゴリ", value="0")
+        self.categories_detail = ft.Dropdown(label="カテゴリ", value="0")
+        self.categories = self.create_category()
+        for c in self.categories:
+            self.categories_simple.options.append(ft.dropdown.Option(key=c["key"], text="{}".format(c["text"])))
+            self.categories_detail.options.append(ft.dropdown.Option(key=c["key"], text="{} ({})".format(c["text"], c["count"])))
 
-        def get_camera_isbn(e):
-            self.shelf_text.value += e
-            shelf_submit(self.shelf_text)
-        
         self.content = ft.Tabs(
             animation_duration=200,
             expand=True,
@@ -250,18 +193,7 @@ class BookLog(ft.Container):
                 ft.Tab(
                     text="書籍情報",
                     icon=ft.Icons.MENU_BOOK,
-                    content=ft.Column(controls=[
-                            ft.Divider(color=ft.Colors.TRANSPARENT),
-                            self.shelf_text,
-                            ft.Divider(),
-                            ft.ResponsiveRow([
-                                ft.Text("検索履歴", col=9, theme_style=ft.TextThemeStyle.TITLE_LARGE),
-                                ft.FilledButton("カメラ", col=1, icon=ft.Icons.COPY, on_click=lambda e: camera.test_pyocr(get_camera_isbn)),
-                                ft.FilledButton("コピー", col=1, icon=ft.Icons.COPY, on_click=table_copy),
-                                ft.FilledButton("クリア", col=1, icon=ft.Icons.CLEAR, on_click=table_clear)
-                            ]),
-                            ft.Column(controls=[shelf_table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
-                        ]),
+                    content=BooklogShelf(self.page, self.driver),
                 ),
                 ft.Tab(
                     text="カテゴリ変更",
@@ -270,7 +202,7 @@ class BookLog(ft.Container):
                             ft.Divider(color=ft.Colors.TRANSPARENT),
                             self.category_text,
                             ft.ResponsiveRow([
-                                ft.Column(col=10, controls=[categories_simple]),
+                                ft.Column(col=10, controls=[self.categories_detail]),
                                 ft.FilledButton("まとめて変更", col=2, icon=ft.Icons.CHANGE_CIRCLE, on_click=bulk_submit)
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                             ft.Divider(),
@@ -287,7 +219,7 @@ class BookLog(ft.Container):
                     content=ft.Column(controls=[
                             ft.Divider(color=ft.Colors.TRANSPARENT),
                             ft.ResponsiveRow([
-                                ft.Column(col=8, controls=[categories_detail]),
+                                # ft.Column(col=8, controls=[self.categories_detail]),
                                 ft.FilledButton("データ取得", col=2, icon=ft.Icons.DOWNLOAD, on_click=shelf_download),
                                 ft.FilledButton("棚卸終了", col=2, icon=ft.Icons.PIN_END, on_click=inventory_end)
                             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
@@ -300,7 +232,7 @@ class BookLog(ft.Container):
         )
 
     def did_mount(self):
-        self.shelf_text.focus()
+        # self.shelf_text.focus()
         self.category_text.focus()
         self.inventory_text.focus()
 
@@ -335,7 +267,7 @@ class BookLog(ft.Container):
 
         return driver
 
-    def update_category(self):
+    def create_category(self):
         self.driver.get("https://booklog.jp/users/{}".format(self.config["username"]))
         self.driver.find_element(By.CLASS_NAME, "shelf-header-menu-category-modal").click()
         links = self.driver.find_elements(By.XPATH, "//*[@id='categories']/*/a")
@@ -348,6 +280,25 @@ class BookLog(ft.Container):
             categories.append({"key": key, "text": link.text.replace(r.group(), ''), "count": int(r.group(1))})
         self.driver.find_element(By.CLASS_NAME, "modal-close").click()
         return categories
+
+    def update_category(self):
+        print(self.categories)
+        value = self.categories_detail.value
+        self.categories_simple.options.clear()
+        self.categories_detail.options.clear()
+        for i, c in enumerate(self.categories):
+            self.categories_simple.options.append(ft.dropdown.Option(key=c["key"], text="{}".format(c["text"])))
+            self.categories_detail.options.append(ft.dropdown.Option(key=c["key"], text="{} ({})".format(c["text"], c["count"])))
+            # self.categories_simple.options[i].value = "{}".format(c["text"])
+            # self.categories_detail.options[i].value = "{} ({})".format(c["text"], c["count"])
+        self.categories_detail.options.append(ft.dropdown.Option(key=-1, text=" "))
+        self.categories_detail.value = -1
+        self.page.update()
+        # # print('aaaaaaaaaaaaaaaaa')
+        time.sleep(0.005)
+        self.categories_detail.options.pop()
+        self.categories_detail.value = value
+        self.page.update()
 
     def get_book_info(self, asin):
         self.driver.get("https://booklog.jp/edit/1/{}".format(asin))

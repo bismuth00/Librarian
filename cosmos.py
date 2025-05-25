@@ -6,12 +6,10 @@ import flet as ft
 import util
 
 class Cosmos(ft.Container):
-    def __init__(self, page, dialog_wait, dialog_error):
+    def __init__(self, page):
         super().__init__()
         self.books = json.load(open("books.json", "r", encoding="utf-8"))
         self.page = page
-        self.dialog_wait = dialog_wait
-        self.dialog_error = dialog_error
 
     def did_mount(self):
         def shelf_keyboard(e):

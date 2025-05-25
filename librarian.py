@@ -8,18 +8,10 @@ import util
 def main(page: ft.Page):
     config = json.load(open("config.json", "r", encoding="utf-8"))
     page.title = "蔵書管理"
-    dialog_wait = ft.AlertDialog(
-        modal=True,
-        title=ft.Text(""))
-    dialog_error = ft.AlertDialog(
-        modal=True,
-        title=ft.Text("登録エラー"),
-        content=ft.Text(""),
-        actions=[ft.TextButton("閉じる", on_click=lambda e: page.close(dialog_error))]
-    )
-    page.add(dialog_wait)
-    page.add(dialog_error)
-    with util.OpenDialog(page, dialog_wait, "初期化中…"):
+    page.window.width = 1200
+    page.window.height = 960
+    page.update()
+    with util.OpenWaitDialog(page, "初期化中…"):
         tabs = ft.Tabs(
             animation_duration=200,
             expand=True,
@@ -27,12 +19,12 @@ def main(page: ft.Page):
                 ft.Tab(
                     text="私物漫画管理",
                     icon=ft.Icons.BOOK,
-                    content=booklog.BookLog(page, dialog_wait, dialog_error, config),
+                    content=booklog.Booklog(page, config),
                 ),
                 ft.Tab(
                     text="会社資料管理",
                     icon=ft.Icons.BUSINESS,
-                    content=cosmos.Cosmos(page, dialog_wait, dialog_error),
+                    content=cosmos.Cosmos(page dialog_error),
                 )
             ])
         page.add(tabs)

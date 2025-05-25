@@ -59,14 +59,34 @@ def window_on_top(page):
     page.window.always_on_top = False
     page.update()
 
-class OpenDialog:
-    def __init__(self, page, dialog, title):
-        self.page = page
-        self.dialog = dialog
-        self.dialog.title.value = title
+def get_book_info(driver, asin):
+    driver.get("https://booklog.jp/edit/1/{}".format(asin))
+    title = driver.find_element(By.CLASS_NAME, "titleLink").text
+    author = driver.find_element(By.CLASS_NAME, "item-info-author").text
+    try:
+        category = Select(driver.find_element(By.NAME, "category_id")).all_selected_options[0].text
+        tags = driver.find_element(By.ID, "tags").text
+    except:
+        category = "未登録"
+        tags = ""
+    return { "asin": asin, "title": title, "author": author, "category": category, "tags": tags }
 
+class OpenWaitDialog:
+    def __init__(self, page, title):
+        self.dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(title))
+        self.page = page
     def __enter__(self):
         self.page.open(self.dialog)
-
     def __exit__(self, exc_type, exc_value, traceback):
         self.page.close(self.dialog)
+
+def OpenErrorDialog(page, title):
+    dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text(title),
+        content=ft.Text(""),
+        actions=[ft.TextButton("閉じる", on_click=lambda e: page.close(dialog))]
+    )
+    page.open(dialog)
