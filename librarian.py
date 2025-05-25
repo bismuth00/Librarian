@@ -24,7 +24,7 @@ def main(page: ft.Page):
                 ft.Tab(
                     text="会社資料管理",
                     icon=ft.Icons.BUSINESS,
-                    content=cosmos.Cosmos(page dialog_error),
+                    content=cosmos.Cosmos(page),
                 )
             ])
         page.add(tabs)
