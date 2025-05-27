@@ -5,8 +5,8 @@ import re
 import time
 import util
 
-class BooklogInventory(ft.Column):
 
+class BooklogInventory(ft.Column):
     def __init__(self, page, driver, categories, config):
         super().__init__()
         self.page = page
@@ -16,18 +16,22 @@ class BooklogInventory(ft.Column):
 
     def build(self):
         self.table = ft.DataTable(
-                        columns = [
-                            ft.DataColumn(ft.Text("")),
-                            ft.DataColumn(ft.Text("ASIN")),
-                            ft.DataColumn(ft.Text("書名")),
-                            ft.DataColumn(ft.Text("タグ")),
-                            ft.DataColumn(ft.Text("状態")),
-                        ],
-                    )
+            columns=[
+                ft.DataColumn(ft.Text("")),
+                ft.DataColumn(ft.Text("ASIN")),
+                ft.DataColumn(ft.Text("書名")),
+                ft.DataColumn(ft.Text("タグ")),
+                ft.DataColumn(ft.Text("状態")),
+            ],
+        )
 
         def download():
             with util.OpenWaitDialog(self.page, "カテゴリ情報取得中…"):
-                self.driver.get("https://booklog.jp/users/{}?category_id={}&display=card".format(self.config["username"], self.dropdown.value))
+                self.driver.get(
+                    "https://booklog.jp/users/{}?category_id={}&display=card".format(
+                        self.config["username"], self.dropdown.value
+                    )
+                )
                 actions = ActionChains(self.driver)
                 items = self.driver.find_elements(By.CLASS_NAME, "shelf-item")
                 while True and len(items) > 0:
@@ -50,22 +54,30 @@ class BooklogInventory(ft.Column):
                     )
 
                 for i in items:
-                    title = i.find_element(By.XPATH, ".//*[@class='item-area-info-title']/a").text
-                    asin = i.find_element(By.XPATH, ".//*[@class='item-area-image']/a").get_attribute('href').split("/")[-1]
+                    title = i.find_element(
+                        By.XPATH, ".//*[@class='item-area-info-title']/a"
+                    ).text
+                    asin = (
+                        i.find_element(By.XPATH, ".//*[@class='item-area-image']/a")
+                        .get_attribute("href")
+                        .split("/")[-1]
+                    )
                     tags = i.find_elements(By.XPATH, ".//*[@class='more-info-tags']")
                     if len(tags) > 0:
                         tags = tags[0].find_element(By.XPATH, "./ul/li/a").text
                     else:
                         tags = None
                     dd = ft.Dropdown(
-                            border_width=0,
-                            options=options,
-                            value="unknown",
-                        )
+                        border_width=0,
+                        options=options,
+                        value="unknown",
+                    )
                     self.table.rows.append(
                         ft.DataRow(
-                            cells = [
-                                ft.DataCell(ft.Text(len(self.table.rows) + 1, selectable=True)),
+                            cells=[
+                                ft.DataCell(
+                                    ft.Text(len(self.table.rows) + 1, selectable=True)
+                                ),
                                 ft.DataCell(ft.Text(asin, selectable=True)),
                                 ft.DataCell(ft.Text(title, selectable=True)),
                                 ft.DataCell(ft.Text(tags, selectable=True)),
@@ -78,7 +90,7 @@ class BooklogInventory(ft.Column):
 
         def submit():
             asin = self.text.value.strip()
-            if re.match(r'^[0-9X]{12}[0-9X]$', asin):
+            if re.match(r"^[0-9X]{12}[0-9X]$", asin):
                 asin = util.isbn_to_asin(asin)
             for row in self.table.rows:
                 if row.cells[1].content.value == asin:
@@ -95,13 +107,13 @@ class BooklogInventory(ft.Column):
                         if row.cells[3].content.value == util.STATE_UNKNOWN_VALUE:
                             continue
                         _ = self.get_book_info(row.cells[1].content.value)
-                        tags = self.driver.find_element(By.ID, 'tags')
+                        tags = self.driver.find_element(By.ID, "tags")
                         tags.send_keys(" " + util.STATE_UNKNOWN_VALUE)
                     elif row.cells[4].content.value == util.STATE_CHECKED_KEY:
                         if row.cells[3].content.value != util.STATE_UNKNOWN_VALUE:
                             continue
                         _ = self.get_book_info(row.cells[1].content.value)
-                        tags = self.driver.find_element(By.ID, 'tags')
+                        tags = self.driver.find_element(By.ID, "tags")
                         tags.clear()
                     else:
                         continue
@@ -111,16 +123,38 @@ class BooklogInventory(ft.Column):
                 self.table.rows.clear()
                 self.page.update()
 
-        self.text = ft.TextField(label="ISBN or ASIN", on_submit=lambda _: submit(), min_lines=1, max_lines=5)
+        self.text = ft.TextField(
+            label="ISBN or ASIN", on_submit=lambda _: submit(), min_lines=1, max_lines=5
+        )
         self.dropdown = util.create_dropdown_categories(self.categories)
-        self.controls.extend([
-                    ft.Divider(color=ft.Colors.TRANSPARENT),
-                    ft.ResponsiveRow([
+        self.controls.extend(
+            [
+                ft.Divider(color=ft.Colors.TRANSPARENT),
+                ft.ResponsiveRow(
+                    [
                         ft.Column(col=8, controls=[self.dropdown]),
-                        ft.FilledButton("データ取得", col=2, icon=ft.Icons.DOWNLOAD, on_click=lambda _: download()),
-                        ft.FilledButton("棚卸終了", col=2, icon=ft.Icons.PIN_END, on_click=lambda _: inventory())
-                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-                    self.text,
-                    ft.Divider(),
-                    ft.Column(controls=[self.table], scroll=ft.ScrollMode.AUTO, expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
-        ])
+                        ft.FilledButton(
+                            "データ取得",
+                            col=2,
+                            icon=ft.Icons.DOWNLOAD,
+                            on_click=lambda _: download(),
+                        ),
+                        ft.FilledButton(
+                            "棚卸終了",
+                            col=2,
+                            icon=ft.Icons.PIN_END,
+                            on_click=lambda _: inventory(),
+                        ),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                self.text,
+                ft.Divider(),
+                ft.Column(
+                    controls=[self.table],
+                    scroll=ft.ScrollMode.AUTO,
+                    expand=True,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                ),
+            ]
+        )

@@ -4,6 +4,7 @@ import booklog
 import cosmos
 import util
 
+
 def main(page: ft.Page):
     config = json.load(open("config.json", "r", encoding="utf-8"))
     page.title = "蔵書管理"
@@ -24,9 +25,11 @@ def main(page: ft.Page):
                     text="会社資料管理",
                     icon=ft.Icons.BUSINESS,
                     content=cosmos.Cosmos(page),
-                )
-            ])
+                ),
+            ],
+        )
         page.add(tabs)
         util.window_on_top(page)
+
 
 ft.app(target=main)

@@ -4,6 +4,7 @@ from booklog_shelf import BooklogShelf
 from booklog_location import BooklogLocation
 from booklog_inventory import BooklogInventory
 
+
 class Booklog(ft.Container):
     def __init__(self, page, config):
         super().__init__()
@@ -31,7 +32,9 @@ class Booklog(ft.Container):
                 ft.Tab(
                     text="棚卸",
                     icon=ft.Icons.MOVE_DOWN,
-                    content=BooklogInventory(self.page, self.driver, self.categories, self.config),
+                    content=BooklogInventory(
+                        self.page, self.driver, self.categories, self.config
+                    ),
                 ),
             ],
         )

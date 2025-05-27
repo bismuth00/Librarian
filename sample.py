@@ -2,6 +2,7 @@ import flet as ft
 import time
 import util
 
+
 class Test(ft.Container):
     def __init__(self, page):
         super().__init__()
@@ -9,14 +10,25 @@ class Test(ft.Container):
 
     def build(self):
         self.categories_detail = ft.Dropdown(label="カテゴリ", value="0")
-        self.categories_detail.options.append(ft.dropdown.Option(key=0, text="未設定(188)"))
-        self.categories_detail.options.append(ft.dropdown.Option(key=1, text="20F本棚F-6(0)"))
-        content = ft.Column(controls=[
-            ft.Text("キーボードを押してみてください"),
-            self.categories_detail,
-            ft.FilledButton("カメラ", col=1, icon=ft.Icons.COPY, on_click=lambda e: self.update_cat()),
-        ])
-        
+        self.categories_detail.options.append(
+            ft.dropdown.Option(key=0, text="未設定(188)")
+        )
+        self.categories_detail.options.append(
+            ft.dropdown.Option(key=1, text="20F本棚F-6(0)")
+        )
+        content = ft.Column(
+            controls=[
+                ft.Text("キーボードを押してみてください"),
+                self.categories_detail,
+                ft.FilledButton(
+                    "カメラ",
+                    col=1,
+                    icon=ft.Icons.COPY,
+                    on_click=lambda e: self.update_cat(),
+                ),
+            ]
+        )
+
         self.content = ft.Tabs(
             is_secondary=True,
             animation_duration=200,
@@ -31,18 +43,28 @@ class Test(ft.Container):
                     text="会社資料管理",
                     icon=ft.Icons.BUSINESS,
                     content=ft.Text(f"ttttttttt"),
-                )
-            ])
+                ),
+            ],
+        )
+
     def update_cat(self):
         self.categories_detail.options.clear()
-        self.categories_detail.options.append(ft.dropdown.Option(key=0, text="未設定(187)"))
-        self.categories_detail.options.append(ft.dropdown.Option(key=1, text="20F本棚F-6(1)"))
-        self.categories_detail.options.append(ft.dropdown.Option(key=len(self.categories_detail.options), text=f"len={len(self.categories_detail.options)}"))
+        self.categories_detail.options.append(
+            ft.dropdown.Option(key=0, text="未設定(187)")
+        )
+        self.categories_detail.options.append(
+            ft.dropdown.Option(key=1, text="20F本棚F-6(1)")
+        )
+        self.categories_detail.options.append(
+            ft.dropdown.Option(
+                key=len(self.categories_detail.options),
+                text=f"len={len(self.categories_detail.options)}",
+            )
+        )
         self.page.update()
 
 
 def main(page: ft.Page):
-
     test = Test(page)
     tabs = ft.Tabs(
         animation_duration=200,
@@ -57,14 +79,13 @@ def main(page: ft.Page):
                 text="会社資料管理",
                 icon=ft.Icons.BUSINESS,
                 content=ft.Text(f"ttttttttt"),
-            )
-        ])
+            ),
+        ],
+    )
 
     page.add(tabs)
-    
-    dialog_wait = ft.AlertDialog(
-        modal=True,
-        title=ft.Text(""))
+
+    dialog_wait = ft.AlertDialog(modal=True, title=ft.Text(""))
 
     def on_key(e):
         with util.OpenDialog(page, dialog_wait, "処理中…"):
@@ -82,5 +103,6 @@ def main(page: ft.Page):
 
     page.on_keyboard_event = on_key
     page.update()
+
 
 ft.app(target=main)

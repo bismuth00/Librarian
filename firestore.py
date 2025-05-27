@@ -1,10 +1,9 @@
 import json
 import os
 from google.cloud import firestore
-import flet as ft
 
-class Firestone():
 
+class Firestone:
     def __init__(self):
         self.categories = set()
         self.locations = set()
@@ -39,5 +38,6 @@ class Firestone():
 
         # with open("books.json", "w", encoding="utf-8") as f:
         #     json.dump(self.books, f, ensure_ascii=False, indent=2)
+
 
 f = Firestone()
