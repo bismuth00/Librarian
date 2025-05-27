@@ -25,7 +25,7 @@ class Booklog(ft.Container):
                     content=BooklogShelf(self.page, self.driver),
                 ),
                 ft.Tab(
-                    text="カテゴリ変更",
+                    text="書棚変更",
                     icon=ft.Icons.LIBRARY_BOOKS,
                     content=BooklogLocation(self.page, self.driver, self.categories),
                 ),

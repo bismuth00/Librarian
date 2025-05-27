@@ -140,8 +140,8 @@ def get_book_categories(driver, config):
     return categories
 
 
-def create_dropdown_categories(categories):
-    dropdown = ft.Dropdown(label="カテゴリ", value="0")
+def create_dropdown_location(categories):
+    dropdown = ft.Dropdown(label="場所", value="0")
     for c in categories:
         dropdown.options.append(
             ft.dropdown.Option(
@@ -151,7 +151,7 @@ def create_dropdown_categories(categories):
     return dropdown
 
 
-def update_dropdown_categories(dropdown, categories, page):
+def update_dropdown_location(dropdown, categories, page):
     value = dropdown.value
     dropdown.options.clear()
     for c in categories:

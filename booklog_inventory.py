@@ -126,7 +126,7 @@ class BooklogInventory(ft.Column):
         self.text = ft.TextField(
             label="ISBN or ASIN", on_submit=lambda _: submit(), min_lines=1, max_lines=5
         )
-        self.dropdown = util.create_dropdown_categories(self.categories)
+        self.dropdown = util.create_dropdown_location(self.categories)
         self.controls.extend(
             [
                 ft.Divider(color=ft.Colors.TRANSPARENT),

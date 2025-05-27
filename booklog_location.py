@@ -42,7 +42,7 @@ class BooklogLocation(ft.Column):
 
                 def process(item):
                     try:
-                        book = self.get_book_info(item)
+                        book = util.get_book_info(self.driver, item)
                         select = Select(
                             self.driver.find_element(By.NAME, "category_id")
                         )
@@ -90,7 +90,7 @@ class BooklogLocation(ft.Column):
                         )
                     else:
                         pending.append(result.failure())
-            util.update_dropdown_categories(self.dropdown, self.categories, self.page)
+            util.update_dropdown_location(self.dropdown, self.categories, self.page)
             if len(pending) == 1 and not re.match(
                 r"^[0-9X]+$", pending[0].split("\t")[0]
             ):
@@ -106,7 +106,7 @@ class BooklogLocation(ft.Column):
         self.text = ft.TextField(
             label="ISBN or ASIN", multiline=True, min_lines=5, max_lines=5
         )
-        self.dropdown = util.create_dropdown_categories(self.categories)
+        self.dropdown = util.create_dropdown_location(self.categories)
         self.controls.extend(
             [
                 ft.Divider(color=ft.Colors.TRANSPARENT),

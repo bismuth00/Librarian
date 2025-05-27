@@ -20,20 +20,11 @@ class Cosmos(ft.Container):
         self.page.update()
 
     def build(self):
-        self.buttons = ft.CupertinoSlidingSegmentedButton(
-            selected_index=0,
-            controls=[
-                ft.Text("無印"),
-                ft.Text("ＢＫ"),
-                ft.Text("ＣＤ"),
-                ft.Text("ＤＶ"),
-                ft.Text("ＨＶ"),
-                ft.Text("ISBN"),
-            ],
-        )
+        self.list_tiles = ft.Column()
 
         def shelf_change(e):
-            text = []
+            print("shelf_change:", e.data)
+            candidate = []
             for book in self.books.values():
                 ids = book["class_id"].split("-")
                 if len(ids) > 1 and not ids[0].isdecimal():
@@ -41,19 +32,18 @@ class Cosmos(ft.Container):
                 else:
                     id = ids[0]
                 if id == e.data:
-                    print(book)
-                    text.append(
-                        "管理番号:{} タイトル:{}".format(
-                            book["class_id"], book["title"]
-                        )
+                    candidate.append(book)
+            self.list_tiles.controls.clear()
+            if len(candidate) > 0:
+                for c in candidate:
+                    self.list_tiles.controls.append(
+                        ft.CupertinoListTile(
+                            additional_info=ft.Text(c["class_id"]),
+                            leading=ft.Icon(name=ft.CupertinoIcons.BOOK),
+                            title=ft.Text(c["title"])
+                        )                    
                     )
-            if len(text) > 0:
-                print(text)
-                snackbar = ft.SnackBar(ft.Text("\n".join(text)))
-                self.page.add(snackbar)
-                self.page.overlay.append(snackbar)
-                snackbar.open = True
-                self.page.update()
+            self.page.update()
 
         self.shelf_text = ft.TextField(label="管理番号 or ISBN", on_change=shelf_change)
         self.inventory_text = ft.TextField(
@@ -105,13 +95,8 @@ class Cosmos(ft.Container):
                             ft.Divider(color=ft.Colors.TRANSPARENT),
                             ft.ResponsiveRow(
                                 [
-                                    ft.Text(
-                                        "管理カテゴリ",
-                                        col=1,
-                                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
-                                    ),
-                                    ft.Column(col=3, controls=[self.buttons]),
-                                    ft.Column(col=8, controls=[self.shelf_text]),
+                                    ft.Column(col=4, controls=[self.shelf_text]),
+                                    ft.Column(col=8, controls=[self.list_tiles]),
                                 ],
                                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             ),
