@@ -1,5 +1,7 @@
 import time
 import re
+import os
+import json
 from returns.result import Failure, Success
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -28,25 +30,37 @@ def login_booklog(config):
     driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(0)
 
-    driver.get("https://booklog.jp/login")
+    if os.path.exists("cookies.json"):
+        driver.get("https://booklog.jp/users/{}".format(config["username"]))
+        with open("cookies.json", "r", encoding="utf-8") as f:
+            cookies = json.load(f)
+            for cookie in cookies:
+                driver.add_cookie(cookie)
+        driver.get("https://booklog.jp/users/{}".format(config["username"]))
+    else:
+        driver.get("https://booklog.jp/login")
 
-    e = driver.find_element(By.ID, "account")
-    e.clear()
-    e.send_keys(config["username"])
-    time.sleep(0.1)
-    e = driver.find_element(By.ID, "password")
-    e.clear()
-    e.send_keys(config["password"])
-    time.sleep(1)
-
-    # フォームを送信
-    button = driver.find_element(By.ID, "login_submit_button")
-    driver.execute_script("arguments[0].click();", button)
-    time.sleep(0.1)
-    button.click()  # <- これだけだと不正検知に引っ掛かるので上の行でイベントを発火させる
-
-    while driver.current_url == "https://booklog.jp/login":
+        e = driver.find_element(By.ID, "account")
+        e.clear()
+        e.send_keys(config["username"])
+        time.sleep(0.1)
+        e = driver.find_element(By.ID, "password")
+        e.clear()
+        e.send_keys(config["password"])
         time.sleep(1)
+
+        # フォームを送信
+        button = driver.find_element(By.ID, "login_submit_button")
+        driver.execute_script("arguments[0].click();", button)
+        time.sleep(0.1)
+        button.click()  # <- これだけだと不正検知に引っ掛かるので上の行でイベントを発火させる
+
+        while driver.current_url == "https://booklog.jp/login":
+            time.sleep(1)
+
+        driver.get("https://booklog.jp/users/{}".format(config["username"]))
+        with open("cookies.json", "w", encoding="utf-8") as f:
+            json.dump(driver.get_cookies(), f, ensure_ascii=False, indent=2)
 
     return driver
 
