@@ -36,7 +36,6 @@ def login_booklog(config):
             cookies = json.load(f)
             for cookie in cookies:
                 driver.add_cookie(cookie)
-        driver.get("https://booklog.jp/users/{}".format(config["username"]))
     else:
         driver.get("https://booklog.jp/login")
 
