@@ -8,22 +8,10 @@ class Cosmos(ft.Container):
         self.books = json.load(open("books.json", "r", encoding="utf-8"))
         self.page = page
 
-    def did_mount(self):
-        def shelf_keyboard(e):
-            if e.key == "Escape":
-                self.buttons.selected_index = (self.buttons.selected_index + 1) % len(
-                    self.buttons.controls
-                )
-                self.buttons.update()
-
-        self.page.on_keyboard_event = shelf_keyboard
-        self.page.update()
-
     def build(self):
         self.list_tiles = ft.Column()
 
         def shelf_change(e):
-            print("shelf_change:", e.data)
             candidate = []
             for book in self.books.values():
                 ids = book["class_id"].split("-")

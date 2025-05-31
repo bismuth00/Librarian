@@ -202,3 +202,26 @@ def OpenErrorDialog(page, title):
         actions=[ft.TextButton("閉じる", on_click=lambda e: page.close(dialog))],
     )
     page.open(dialog)
+
+def OpenBookDialog(page, book):
+    table = ft.DataTable(
+        heading_row_height=0,
+        show_bottom_border=True,
+        columns=[
+            ft.DataColumn(ft.Text("")),
+            ft.DataColumn(ft.Text("")),
+        ],
+    )
+    table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text("ASIN", selectable=True)), ft.DataCell(ft.Text(book["asin"], selectable=True))]))
+    table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text("書名", selectable=True)), ft.DataCell(ft.Text(book["title"], selectable=True))]))
+    table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text("作者", selectable=True)), ft.DataCell(ft.Text(book["author"], selectable=True))]))
+    table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text("カテゴリ", selectable=True)), ft.DataCell(ft.Text(book["category"], selectable=True))]))
+    table.rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text("ISBN", selectable=True)), ft.DataCell(ft.TextField(hint_text="ISBNを入力してください", border=ft.InputBorder.NONE, hint_style=ft.TextStyle(italic=True)))]))
+    dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("書籍情報"),
+        content=ft.Column(controls=[
+            table,
+        ], tight=True),
+    )
+    page.open(dialog)
