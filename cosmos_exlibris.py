@@ -10,6 +10,32 @@ class CosmosExlibris(ft.Column):
     def build(self):
         self.list = ft.Column()
 
+        def appendBookTable(book):
+            self.table.rows.insert(
+                0,
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(
+                            ft.Text(len(self.table.rows) + 1, selectable=True)
+                        ),
+                        ft.DataCell(ft.Text(book["class_id"], selectable=True)),
+                        ft.DataCell(ft.Text(book["category"], selectable=True)),
+                        ft.DataCell(ft.Text(book["title"], selectable=True)),
+                        ft.DataCell(ft.Text(book.get("location", "不明"), selectable=True)),
+                    ]
+                ),
+            )
+            self.list.clean()
+            self.text.value = ""
+            self.text.focus()
+            self.page.update()
+
+        def submit(e):
+            if len(self.list.controls) != 1:
+                e.control.focus()
+                return
+            appendBookTable(self.list.controls[0].book)
+
         def change(e):
             candidate = []
             for book in self.books.values():
@@ -23,16 +49,17 @@ class CosmosExlibris(ft.Column):
             self.list.controls.clear()
             if len(candidate) > 0:
                 for c in candidate:
-                    self.list.controls.append(
-                        ft.CupertinoListTile(
+                    tile = ft.CupertinoListTile(
                             additional_info=ft.Text(c["class_id"]),
                             leading=ft.Icon(name=ft.CupertinoIcons.BOOK),
-                            title=ft.Text(c["title"])
-                        )                    
-                    )
+                            title=ft.Text(c["title"]),
+                            on_click=lambda _: appendBookTable(c)
+                        )
+                    tile.book = c
+                    self.list.controls.append(tile)
             self.page.update()
 
-        self.text = ft.TextField(label="管理番号 or ISBN", on_change=change)
+        self.text = ft.TextField(label="管理番号 or ISBN", on_change=change, on_submit=submit)
 
         self.table = ft.DataTable(
             sort_column_index=1,
