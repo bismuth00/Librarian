@@ -6,7 +6,7 @@ import camera
 import util
 
 
-class BooklogShelf(ft.Column):
+class BooklogExlibris(ft.Column):
     def __init__(self, page, driver):
         super().__init__()
         self.page = page

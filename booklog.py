@@ -1,6 +1,6 @@
 import flet as ft
 import util
-from booklog_shelf import BooklogShelf
+from booklog_exlibris import BooklogExlibris
 from booklog_location import BooklogLocation
 from booklog_inventory import BooklogInventory
 
@@ -22,7 +22,7 @@ class Booklog(ft.Container):
                 ft.Tab(
                     text="書籍情報",
                     icon=ft.Icons.MENU_BOOK,
-                    content=BooklogShelf(self.page, self.driver),
+                    content=BooklogExlibris(self.page, self.driver),
                 ),
                 ft.Tab(
                     text="書棚変更",
